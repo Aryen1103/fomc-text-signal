@@ -34,7 +34,67 @@ Scraped from federalreserve.gov: the current calendar page
 (`/monetarypolicy/fomchistoricalYYYY.htm`, 1994-2020). Raw HTML is cached in
 `data/cache/html/` and never re-downloaded; requests are rate limited.
 
-_Counts and gaps: see the phase 1 checkpoint section below._
+### What was collected (as of 2026-09-28)
+
+| | Scheduled | Unscheduled (flagged, excluded from main test) | Release dates |
+|---|---|---|---|
+| Statements | 231 | 19 | 1994-02-04 to 2026-09-16 |
+| Minutes | 260 | 1 | 1994-03-25 to 2026-08-19 |
+
+Gaps, all genuine rather than scraping failures:
+
+- **1994 to March 1999:** the FOMC issued a statement only when it changed policy, so 30
+  scheduled meetings in that period have no statement. Every scheduled meeting from
+  May 1999 on has one.
+- **15 September 2003** was a meeting with no statement and no separate minutes.
+- **Minutes timing changed in December 2004.** Before 2005, minutes were released after
+  the next meeting (median 50 days after the meeting); from 2005 on, about three weeks
+  later (median 21 days). H3 therefore uses minutes released from 2005 onward (173 documents).
+- **TLT starts on 2002-07-30**, which limits the daily event study to 193 scheduled
+  statements. That is a small sample.
+
+Unscheduled actions (conference calls, unscheduled meetings, notation votes, and the
+cancelled March 2020 meeting) are kept in the data with `scheduled = false`.
+
+### Release times
+
+The time is verified per document and never assumed. When it cannot be verified it is
+left null.
+
+| Document | Source of time | Count |
+|---|---|---|
+| Statement | "For release at ..." on the statement page (2013 on, plus unscheduled actions) | 95 |
+| Statement | the meeting's minutes ("statement ... to be released at 2:15 p.m."), 2006-2013 | 76 |
+| Statement | unverified (1994-2005: neither source states a time) | 79 |
+| Minutes | "For release at ..." on the minutes press release | 163 |
+| Minutes | unverified (mostly pre-2005; no press release in the archive) | 98 |
+
+Verified times vary: 2:15 pm ET through 2012, 12:30 pm on 2011-12 press-conference
+days, 2:00 pm from 2013. The March 2013 minutes were released at 9:00 am on 2013-04-10
+after an early leak. One minutes press release (2008-01-02) prints "12:00 a.m.". That
+is treated as implausible and left unverified. Unverified times do not affect the
+daily (close-to-close) study. They only matter for the optional intraday phase.
+
+The statement dated 2007-06-28 is hosted at a URL stamped 20070618. The date printed on
+the page is used, and the discrepancy is recorded in `release_date_check`.
+
+### Cleaning
+
+Cleaning is rule based and works on paragraphs. Every removed paragraph or sentence is
+saved with the rule that removed it, in `data/processed/stripped.parquet`.
+
+- **Statements:** page header ("For release at ...", date, title), footer and links,
+  voting lists (including dissent notes), media contacts, and the procedural sentence
+  "the Board approved requests submitted by the Boards of Directors of ...".
+- **Minutes:** attendance lists and organisational/legal text (authorizations,
+  elections, rules) before the markets report, and quoted statement and directive text,
+  so the minutes score does not re-score the statement. Also removed: voting blocks, the
+  annually re-adopted Statement on Longer-Run Goals, section headings, and everything from
+  "It was agreed that the next meeting ..." on. Special-topic discussions placed before
+  the markets report (framework reviews, balance-sheet normalization) are kept.
+
+After cleaning, statements have a median of 279 words (36 to 808) and minutes a median
+of 5,350 words.
 
 ## Repo layout
 

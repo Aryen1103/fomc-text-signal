@@ -105,13 +105,14 @@ class ReleaseTime:
     note: str = ""
 
 
-MINUTES_PR_TITLE = re.compile(r"Minutes of the Federal Open Market Committee", re.IGNORECASE)
+MINUTES_PR_TITLE = re.compile(r"Minutes of (the )?Federal Open Market Committee", re.IGNORECASE)
 
 
 def minutes_press_release_urls(release_date) -> list[str]:
     """Candidate press-release URLs announcing minutes released on ``release_date``.
 
-    The Board numbers same-day releases a, b, c, ...; the title identifies the minutes.
+    The Board numbers same-day releases a, b, c, ...; the page title identifies the
+    minutes ("Minutes of [the] Federal Open Market Committee, ...").
     """
     stamp = release_date.strftime("%Y%m%d")
     return [f"/newsevents/pressreleases/monetary{stamp}{s}.htm" for s in "abcde"]
@@ -130,6 +131,8 @@ def minutes_release_time(fetch, release_date) -> tuple[ReleaseTime, str | None]:
         paras = html_to_paragraphs(html)
         if any(MINUTES_PR_TITLE.search(p) for p in paras[:4]):
             t = release_time_from_statement_page(paras)
+            if t == time(0, 0):  # e.g. 2008-01-02 prints "12:00 a.m."; not trusted
+                return ReleaseTime(None, "unverified", "press release says 12:00 a.m. (implausible)"), url
             if t is not None:
                 return ReleaseTime(t, "minutes_press_release"), url
             return ReleaseTime(None, "unverified", "press release has no time"), url

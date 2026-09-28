@@ -237,3 +237,19 @@ def test_split_sentences_quotes_and_empty():
     assert split_sentences("") == []
     assert split_sentences("“Rates rose.” Then prices fell.") == [
         "“Rates rose.”", "Then prices fell."]
+
+
+def test_minutes_release_time_from_press_release():
+    from datetime import date
+    from fomc_signal.ingest.documents import minutes_release_time
+    pages = {
+        "/newsevents/pressreleases/monetary20080220a.htm":
+            "<div id='article'><p>February 20, 2008</p>"
+            "<h3>Minutes of Federal Open Market Committee, January 29-30, 2008</h3>"
+            "<p>For release at 2:00 p.m. EST</p></div>",
+    }
+    rt, url = minutes_release_time(pages.get, date(2008, 2, 20))
+    assert (rt.time, rt.source) == (time(14, 0), "minutes_press_release")
+    assert url.endswith("20080220a.htm")
+    rt, url = minutes_release_time(pages.get, date(2008, 2, 21))
+    assert rt.time is None and url is None

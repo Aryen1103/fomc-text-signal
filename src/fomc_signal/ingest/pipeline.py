@@ -77,12 +77,14 @@ def build_documents(meetings: pl.DataFrame, fetcher: CachedFetcher
             printed = page_date(st_paras)
             rt = resolve_statement_time(st_paras, mn_paras)
             res = clean_statement(st_paras)
-            doc_id = f"statement_{url_date}_{m['event_type']}"
+            # the date printed on the page wins; a few archive URLs carry a wrong date stamp
+            rel = printed or url_date
+            doc_id = f"statement_{rel}_{m['event_type']}"
             docs.append({
                 **base, "doc_id": doc_id, "doc_type": "statement",
-                "release_date": url_date,
-                "release_date_check": "ok" if printed in (None, url_date) else f"page says {printed}",
-                "release_time_et": rt.time, "release_datetime": _et(url_date, rt.time),
+                "release_date": rel,
+                "release_date_check": "ok" if url_date in (None, rel) else f"url says {url_date}",
+                "release_time_et": rt.time, "release_datetime": _et(rel, rt.time),
                 "time_source": rt.source, "time_note": rt.note,
                 "source_url": fetcher.absolute(m["statement_url"]),
                 "raw_text": "\n\n".join(st_paras), "clean_text": res.text,
