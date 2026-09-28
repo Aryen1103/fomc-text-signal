@@ -1,0 +1,29 @@
+[project]
+name = "fomc-signal"
+version = "0.1.0"
+description = "Does the change in FOMC statement tone predict market reactions? An event study."
+requires-python = ">=3.11"
+dependencies = [
+    "polars>=1.0",
+    "numpy>=1.26",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "tzdata>=2024.1",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+# CPU-only torch: install with --index-url https://download.pytorch.org/whl/cpu (see README)
+models = ["torch>=2.2", "transformers>=4.40"]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
