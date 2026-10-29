@@ -156,6 +156,15 @@ def test_clean_statement_new_layout():
     assert "media_contact" in rules and "voting" in rules and "footer" in rules
 
 
+def test_clean_statement_drops_the_2026_vote_preface():
+    paragraphs = ["For release at 2:00 p.m. EDT",
+                  "The Federal Open Market Committee approved the following statement for release by a 12 – 0 vote:",
+                  "Economic activity is expanding at a solid pace. Inflation remains elevated."]
+    res = clean_statement(paragraphs)
+    assert res.kept == ["Economic activity is expanding at a solid pace. Inflation remains elevated."]
+    assert ("voting", paragraphs[1]) in res.stripped
+
+
 MINUTES = [
     "Minutes of the Federal Open Market Committee",
     "A meeting of the Federal Open Market Committee was held in the offices of the Board.",

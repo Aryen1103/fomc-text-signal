@@ -17,6 +17,10 @@ VOTING = re.compile(
     re.IGNORECASE,
 )
 DISSENT_ONLY = re.compile(r"^[A-Z][\w.'\- ]{2,60}\s(dissented|voted against)\b")
+# From June 2026 the statement opens with its own vote: "... approved the following
+# statement for release by a 12 - 0 vote:". A vote count, not tone.
+VOTE_PREFACE = re.compile(r"approved the following statement for release by a [\d\s–—-]+ vote:?$",
+                          re.IGNORECASE)
 MEDIA = re.compile(r"(For media inquiries|Media [Ii]nquiries|Media Contacts?:|202-452-\d{4})")
 DISCOUNT_APPROVAL_SENT = re.compile(r"requests?\s+submitted by the Boards? of Directors", re.IGNORECASE)
 
@@ -131,7 +135,7 @@ def clean_statement(paragraphs: list[str]) -> CleanResult:
 
     kept = []
     for p in body:
-        if VOTING.search(p) or DISSENT_ONLY.search(p):
+        if VOTING.search(p) or DISSENT_ONLY.search(p) or VOTE_PREFACE.search(p):
             log.append(("voting", p))
         elif MEDIA.search(p):
             log.append(("media_contact", p))

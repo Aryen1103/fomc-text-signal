@@ -7,8 +7,9 @@ decision itself?
 This is a research project, not a trading system. A weak or null result, tested
 carefully, is an acceptable outcome, and results are reported as found.
 
-**Status:** Phase 1 (ingestion) complete. Phases 2 (tone scoring) and 3 (event study) not started.
-No returns have been looked at.
+**Status:** Phase 1 (ingestion) complete. Phase 2 (tone scoring) in progress: the validation
+set and the rule for choosing the primary scorer are fixed (`validation/`), scorers not yet run.
+Phase 3 (event study) not started. No returns have been looked at.
 
 ## Pre-registered design
 
@@ -20,6 +21,8 @@ Fixed before any returns were examined. No horizons or assets are added after se
 | **H2** | The effect is concentrated on the announcement day and decays over later horizons. |
 | **H3** | Minutes (released ~3 weeks later) carry a weaker signal than statements, because the market has already priced most of the decision. |
 | Key variable | `tone_change = score(t) - score(previous statement)` |
+| Tone score | sentence labels hawkish / dovish / neutral; document `score = (H - D) / N` |
+| Primary scorer | chosen by macro-F1 on 150 hand-labelled statement sentences, rule fixed before scoring (`validation/README.md`) |
 | Daily horizons | day 0 (close before release to close on release day), day 1, day 5 cumulative; log returns |
 | Outcomes | SPY return, TLT return, change in 2-year Treasury yield (FRED `DGS2`) |
 | Regression | `return = a + b1 * tone_change + b2 * rate_change + e`, HC1 standard errors |
