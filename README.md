@@ -8,8 +8,9 @@ This is a research project, not a trading system. A weak or null result, tested
 carefully, is an acceptable outcome, and results are reported as found.
 
 **Status:** Phase 1 (ingestion) complete. Phase 2 (tone scoring) in progress: the primary
-scorer has been chosen by the pre-registered rule (below); statements are being scored and
-minutes are still to do. Phase 3 (event study) not started. No returns have been looked at.
+scorer has been chosen by the pre-registered rule (below); statements are being scored with
+it, and minutes use the lexicon (see the deviation note below). Phase 3 (event study) not
+started. No returns have been looked at.
 
 ## Phase 2: choosing the tone scorer
 
@@ -35,9 +36,23 @@ control policy blocks the torch DLLs:
 docker build -t fomc-signal .
 docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --validate
 docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --documents statement --scorer zs-large
-docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --documents minutes --scorer zs-large --since 2005-01-01
+python scripts/score.py --documents minutes --scorer lexicon    # no Docker needed
 python scripts/check_tone.py --scorer zs-large    # sanity checks, no market data
 ```
+
+**Deviation from the plan: minutes are scored with the lexicon, not DeBERTa-large.** Each
+sentence needs three passes through the 435M-parameter model, and on this machine's CPU the
+3,117 statement sentences take about 3 hours. The 37,037 sentences in the 2005+ minutes would
+take 35-45 hours. Minutes serve only H3, which is secondary, so they use the lexicon instead.
+This was decided on 2026-11-08, before any market data was loaded or examined.
+Consequences, stated in advance:
+- H3 compares statement tone (DeBERTa-large) with minutes tone (lexicon). That makes it a
+  weaker test, because some of any difference between the two may come from the scorers
+  rather than the documents.
+- The lexicon was validated on statement sentences only (macro-F1 0.67) and may do worse on
+  the longer, more discursive minutes.
+- H3 is reported as a secondary analysis. H1 and H2 (statements, DeBERTa-large) are the main
+  results.
 
 ## Pre-registered design
 
@@ -50,7 +65,7 @@ Fixed before any returns were examined. No horizons or assets are added after se
 | **H3** | Minutes (released ~3 weeks later) carry a weaker signal than statements, because the market has already priced most of the decision. |
 | Key variable | `tone_change = score(t) - score(previous statement)` |
 | Tone score | sentence labels hawkish / dovish / neutral; document `score = (H - D) / N` |
-| Primary scorer | chosen by macro-F1 on 150 hand-labelled statement sentences, rule fixed before scoring (`validation/README.md`) |
+| Primary scorer | chosen by macro-F1 on 150 hand-labelled statement sentences, rule fixed before scoring (`validation/README.md`); used for statements. Minutes use the lexicon, for compute reasons (deviation noted above, decided before any market data) |
 | Daily horizons | day 0 (close before release to close on release day), day 1, day 5 cumulative; log returns |
 | Outcomes | SPY return, TLT return, change in 2-year Treasury yield (FRED `DGS2`) |
 | Regression | `return = a + b1 * tone_change + b2 * rate_change + e`, HC1 standard errors |
