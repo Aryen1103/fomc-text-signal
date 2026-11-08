@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date
 
 import polars as pl
 
@@ -67,9 +68,11 @@ def validate(names: list[str]) -> None:
     (OUT / "validation_metrics.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
 
-def score_documents(doc_type: str, name: str) -> None:
+def score_documents(doc_type: str, name: str, since: date | None = None) -> None:
     docs = (pl.read_parquet(PROCESSED / "documents.parquet").filter(pl.col("doc_type") == doc_type)
             .sort("release_date"))
+    if since:  # e.g. minutes before 2005 came out after the next meeting and are not used in H3
+        docs = docs.filter(pl.col("release_date") >= since)
     label = scorer(name)
     sentence_rows, doc_rows = [], []
     for doc in docs.iter_rows(named=True):
@@ -97,11 +100,12 @@ def main() -> None:
     ap.add_argument("--candidates", nargs="+", default=CANDIDATES, choices=CANDIDATES)
     ap.add_argument("--documents", choices=["statement", "minutes"])
     ap.add_argument("--scorer", choices=CANDIDATES)
+    ap.add_argument("--since", type=date.fromisoformat, help="only documents released on or after this date")
     args = ap.parse_args()
     if args.validate:
         validate(args.candidates)
     elif args.documents and args.scorer:
-        score_documents(args.documents, args.scorer)
+        score_documents(args.documents, args.scorer, args.since)
     else:
         ap.error("use --validate, or --documents TYPE --scorer NAME")
 

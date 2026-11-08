@@ -61,8 +61,13 @@ class ZeroShotScorer:
         self.entail = entailment_index(self.model.config.id2label)
 
     def score(self, sentences: list[str]) -> tuple[list[str], list[list[float]]]:
-        """Label and [p_hawkish, p_dovish, p_neutral] for each sentence."""
-        pairs = [(s, HYPOTHESES[label]) for s in sentences for label in LABELS]
+        """Label and [p_hawkish, p_dovish, p_neutral] for each sentence, in input order.
+
+        Sentences are batched shortest-first so each batch pads to a similar length (much
+        less wasted computation on long minutes documents), then restored to input order.
+        """
+        order = length_order(sentences)
+        pairs = [(sentences[i], HYPOTHESES[label]) for i in order for label in LABELS]
         logits: list[float] = []
         for start in range(0, len(pairs), BATCH_SIZE * len(LABELS)):
             chunk = pairs[start: start + BATCH_SIZE * len(LABELS)]
@@ -71,4 +76,17 @@ class ZeroShotScorer:
             with self._torch.no_grad():
                 logits += self.model(**batch).logits[:, self.entail].tolist()
         rows = [logits[i: i + len(LABELS)] for i in range(0, len(logits), len(LABELS))]
-        return labels_from_logits(rows)
+        return labels_from_logits(restore_order(rows, order))
+
+
+def length_order(sentences: list[str]) -> list[int]:
+    """Indices of sentences, shortest first (stable, so ties keep reading order)."""
+    return sorted(range(len(sentences)), key=lambda i: len(sentences[i]))
+
+
+def restore_order(rows: list, order: list[int]) -> list:
+    """Undo length_order: rows[k] belongs to sentence order[k]."""
+    out = [None] * len(rows)
+    for k, i in enumerate(order):
+        out[i] = rows[k]
+    return out

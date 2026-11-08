@@ -1,0 +1,28 @@
+{
+  "scorer": "lexicon",
+  "statements": 231,
+  "mean_score_by_decision": [
+    {
+      "decision": "lower",
+      "n": 28,
+      "mean_score": -0.215
+    },
+    {
+      "decision": "unclear",
+      "n": 39,
+      "mean_score": -0.008
+    },
+    {
+      "decision": "hold",
+      "n": 111,
+      "mean_score": 0.041
+    },
+    {
+      "decision": "raise",
+      "n": 53,
+      "mean_score": 0.282
+    }
+  ],
+  "corr_with_lexicon_level": 1.0,
+  "corr_with_lexicon_change": 1.0
+}

@@ -55,3 +55,13 @@ def test_selection_rule_prefers_the_cheaper_scorer_within_the_margin():
     assert score.choose(results) == "zs-base"
     results["zs-large"]["macro_f1"] = 0.80
     assert score.choose(results) == "zs-large"
+
+
+def test_length_sorted_batching_returns_rows_in_input_order():
+    from fomc_signal.score.zeroshot import length_order, restore_order
+
+    sentences = ["a much longer sentence here", "short", "medium one", "short"]
+    order = length_order(sentences)
+    assert [sentences[i] for i in order] == ["short", "short", "medium one", "a much longer sentence here"]
+    rows_in_sorted_order = [sentences[i].upper() for i in order]
+    assert restore_order(rows_in_sorted_order, order) == [s.upper() for s in sentences]

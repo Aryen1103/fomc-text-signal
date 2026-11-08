@@ -1,0 +1,72 @@
+{
+  "candidates": {
+    "lexicon": {
+      "macro_f1": 0.6723,
+      "accuracy": 0.68,
+      "kappa": 0.5249,
+      "confusion_gold_by_pred": {
+        "hawkish": {
+          "hawkish": 38,
+          "dovish": 0,
+          "neutral": 8
+        },
+        "dovish": {
+          "hawkish": 11,
+          "dovish": 23,
+          "neutral": 21
+        },
+        "neutral": {
+          "hawkish": 5,
+          "dovish": 3,
+          "neutral": 41
+        }
+      }
+    },
+    "zs-base": {
+      "macro_f1": 0.5829,
+      "accuracy": 0.5933,
+      "kappa": 0.3951,
+      "confusion_gold_by_pred": {
+        "hawkish": {
+          "hawkish": 26,
+          "dovish": 2,
+          "neutral": 18
+        },
+        "dovish": {
+          "hawkish": 5,
+          "dovish": 18,
+          "neutral": 32
+        },
+        "neutral": {
+          "hawkish": 3,
+          "dovish": 1,
+          "neutral": 45
+        }
+      }
+    },
+    "zs-large": {
+      "macro_f1": 0.7488,
+      "accuracy": 0.7467,
+      "kappa": 0.622,
+      "confusion_gold_by_pred": {
+        "hawkish": {
+          "hawkish": 38,
+          "dovish": 1,
+          "neutral": 7
+        },
+        "dovish": {
+          "hawkish": 4,
+          "dovish": 32,
+          "neutral": 19
+        },
+        "neutral": {
+          "hawkish": 5,
+          "dovish": 2,
+          "neutral": 42
+        }
+      }
+    }
+  },
+  "majority_class_accuracy": 0.36666666666666664,
+  "primary": "zs-large"
+}

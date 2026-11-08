@@ -7,9 +7,37 @@ decision itself?
 This is a research project, not a trading system. A weak or null result, tested
 carefully, is an acceptable outcome, and results are reported as found.
 
-**Status:** Phase 1 (ingestion) complete. Phase 2 (tone scoring) in progress: the validation
-set and the rule for choosing the primary scorer are fixed (`validation/`), scorers not yet run.
-Phase 3 (event study) not started. No returns have been looked at.
+**Status:** Phase 1 (ingestion) complete. Phase 2 (tone scoring) in progress: the primary
+scorer has been chosen by the pre-registered rule (below); statements are being scored and
+minutes are still to do. Phase 3 (event study) not started. No returns have been looked at.
+
+## Phase 2: choosing the tone scorer
+
+Three candidates labelled the 150 hand-labelled validation sentences (`validation/`); the
+labels, labelling guide and selection rule were committed before any scorer ran.
+
+| Scorer | Macro-F1 | Accuracy | Cohen's kappa |
+|---|---|---|---|
+| Lexicon baseline (subject x direction pairs, policy phrases) | 0.672 | 0.680 | 0.53 |
+| Zero-shot DeBERTa-v3-base | 0.583 | 0.593 | 0.40 |
+| **Zero-shot DeBERTa-v3-large (primary)** | **0.749** | **0.747** | **0.62** |
+
+Majority-class accuracy is 0.367. DeBERTa-large wins by more than the 0.03 tie margin. All
+candidates under-call dovish sentences (DeBERTa-large labels 19 of 55 as neutral), so scores
+lean slightly less dovish than the labels; this affects the level more than meeting-to-meeting
+changes. The lexicon was written by the person who labelled the set, so its score may be
+optimistic; it lost anyway. Full predictions: `results/phase2/validation_*`.
+
+The model scorers run in Docker (`Dockerfile`), because the development machine's application
+control policy blocks the torch DLLs:
+
+```bash
+docker build -t fomc-signal .
+docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --validate
+docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --documents statement --scorer zs-large
+docker run --rm -v "$PWD":/work fomc-signal python scripts/score.py --documents minutes --scorer zs-large --since 2005-01-01
+python scripts/check_tone.py --scorer zs-large    # sanity checks, no market data
+```
 
 ## Pre-registered design
 
