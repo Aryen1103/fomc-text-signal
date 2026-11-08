@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from datetime import date
 
 import polars as pl
@@ -74,8 +75,18 @@ def score_documents(doc_type: str, name: str, since: date | None = None) -> None
     if since:  # e.g. minutes before 2005 came out after the next meeting and are not used in H3
         docs = docs.filter(pl.col("release_date") >= since)
     label = scorer(name)
+    # Checkpoint: model scorers take hours on CPU, so finished documents are saved as the
+    # run goes and a restarted run skips them. Deleted once the full output is written.
+    partial_docs = PROCESSED / f"tone_{name}_{doc_type}_partial.parquet"
+    partial_sents = PROCESSED / f"tone_{name}_{doc_type}_partial_sentences.parquet"
     sentence_rows, doc_rows = [], []
-    for doc in docs.iter_rows(named=True):
+    if partial_docs.exists():
+        doc_rows, sentence_rows = pl.read_parquet(partial_docs).to_dicts(), pl.read_parquet(partial_sents).to_dicts()
+        print(f"resuming: {len(doc_rows)} documents already scored")
+    done = {r["doc_id"] for r in doc_rows}
+    todo = docs.filter(~pl.col("doc_id").is_in(list(done)))
+    start = time.time()
+    for k, doc in enumerate(todo.iter_rows(named=True), 1):
         sents = split_sentences(doc["clean_text"] or "")
         labels = label(sents) if sents else []
         sentence_rows += [{"doc_id": doc["doc_id"], "i": i, "sentence": s, "label": lab}
@@ -84,13 +95,21 @@ def score_documents(doc_type: str, name: str, since: date | None = None) -> None
         doc_rows.append({"doc_id": doc["doc_id"], "release_date": doc["release_date"], "scheduled": doc["scheduled"],
                          "n_sentences": len(sents), "n_hawkish": h, "n_dovish": d,
                          "score": (h - d) / len(sents) if sents else None})
-    out = pl.DataFrame(doc_rows)
+        if name != "lexicon" and (k % 5 == 0 or k == todo.height):
+            pl.DataFrame(doc_rows).write_parquet(partial_docs)
+            pl.DataFrame(sentence_rows).write_parquet(partial_sents)
+            mins = (time.time() - start) / 60
+            print(f"{len(doc_rows)}/{docs.height} documents, {mins:.0f} min, "
+                  f"~{mins / k * (todo.height - k):.0f} min left", flush=True)
+    out = pl.DataFrame(doc_rows).sort("release_date")
     # tone_change: against the previous *scheduled* document of the same type (README, H1).
     sched = (out.filter(pl.col("scheduled")).sort("release_date")
              .with_columns((pl.col("score") - pl.col("score").shift(1)).alias("tone_change")))
     out = out.join(sched.select("doc_id", "tone_change"), on="doc_id", how="left")
     out.write_parquet(PROCESSED / f"tone_{name}_{doc_type}.parquet")
     pl.DataFrame(sentence_rows).write_parquet(PROCESSED / f"tone_{name}_{doc_type}_sentences.parquet")
+    partial_docs.unlink(missing_ok=True)
+    partial_sents.unlink(missing_ok=True)
     print(f"{doc_type}: {out.height} documents, {len(sentence_rows)} sentences scored with {name}")
 
 

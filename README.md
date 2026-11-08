@@ -40,6 +40,9 @@ python scripts/score.py --documents minutes --scorer lexicon    # no Docker need
 python scripts/check_tone.py --scorer zs-large    # sanity checks, no market data
 ```
 
+Model scoring saves a checkpoint every 5 documents and prints progress. An interrupted run
+continues from the checkpoint when started again with the same command.
+
 **Deviation from the plan: minutes are scored with the lexicon, not DeBERTa-large.** Each
 sentence needs three passes through the 435M-parameter model, and on this machine's CPU the
 3,117 statement sentences take about 3 hours. The 37,037 sentences in the 2005+ minutes would
